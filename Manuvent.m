@@ -22,7 +22,7 @@ function varargout = Manuvent(varargin)
 
 % Edit the above text to modify the response to help Manuvent
 
-% Last Modified by GUIDE v2.5 31-Oct-2019 23:51:21
+% Last Modified by GUIDE v2.5 03-Nov-2019 21:50:17
 
 % Version 0.0.2 11/01/2019 yixiang.wang@yale.edu
 
@@ -197,21 +197,15 @@ function listbox_Callback(hObject, eventdata, handles)
 % Hints: contents = cellstr(get(hObject,'String')) returns listbox contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from listbox
 
-global preROI
-
 curMovie = handles.output.UserData.curMovie;%Get current movie
-try
-    preROI.Visible = 'off';
-catch
-    disp('First roi selected.')
-end
-
 curVal = get(hObject,'Value'); %Get current value
-allROI_info = handles.listbox.UserData.allROI_info; %Get all ROIs' inforamtion
 allROI = handles.listbox.UserData.allROI; %Get all ROI objects
+allROI_info = handles.listbox.UserData.allROI_info;
 roi = allROI{curVal}; %Get corresponding roi obj
 roi_info = allROI_info(curVal,:); %Get corresponding roi info
 
+%Get the index of the first frame
+ini_idx = roi_info(3); 
 
 %Show current roi
 roi.Parent = handles.axes1;
@@ -229,20 +223,6 @@ addlistener(roi, 'ROIClicked', @(src,evt)clickedCallback(src,evt,handles));
 
 hold on;
 
-%Play the current event
-ini_idx = roi_info(3); 
-end_idx = roi_info(4);
-%Show event progress
-set(handles.Text_playing, 'Visible', 'On')
-set(handles.Text_playing, 'String', 'Replaying...')
-hObject.Enable = 'off';
-for i = ini_idx:end_idx
-    imshow(mat2gray(curMovie(:,:,i)), 'Parent', handles.axes1);
-    pause(0.05)
-end
-set(handles.Text_playing, 'String', 'Last frame')
-pause(1)
-hObject.Enable = 'on';
 
 %Jump to the frame where the current roi was created
 im = imshow(mat2gray(curMovie(:,:,ini_idx)), 'Parent', handles.axes1);
@@ -256,9 +236,6 @@ handles.Frame.String = num2str(ini_idx);
 
 set(handles.Text_playing, 'String', 'First frame')
 
-preROI = roi;
-
-disp('')
 
 % --- Executes during object creation, after setting all properties.
 function listbox_CreateFcn(hObject, eventdata, handles)
@@ -699,3 +676,59 @@ function Text_playing_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+
+% --- Executes on button press in Replay.
+function Replay_Callback(hObject, eventdata, handles)
+% hObject    handle to Replay (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+curMovie = handles.output.UserData.curMovie;%Get current movie
+curVal = handles.listbox.Value; %Get current value
+allROI_info = handles.listbox.UserData.allROI_info; %Get all ROIs' inforamtion
+allROI = handles.listbox.UserData.allROI; %Get all ROI objects
+roi_info = allROI_info(curVal,:); %Get corresponding roi info
+
+%Play the current event
+ini_idx = roi_info(3); 
+end_idx = roi_info(4);
+%Show event progress
+set(handles.Text_playing, 'Visible', 'On')
+set(handles.Text_playing, 'String', 'Replaying...')
+hObject.Enable = 'off';
+for i = ini_idx:end_idx
+    imshow(mat2gray(curMovie(:,:,i)), 'Parent', handles.axes1);
+    pause(0.05)
+end
+set(handles.Text_playing, 'String', 'Last frame')
+pause(1)
+hObject.Enable = 'on';
+
+%Jump to the frame where the current roi was created
+im = imshow(mat2gray(curMovie(:,:,ini_idx)), 'Parent', handles.axes1);
+set(im, 'ButtonDownFcn', {@markEvents, handles});
+%Set current index to the initial index of the selected event
+handles.Movie_control.UserData.curIdx = ini_idx; 
+%Reset slider value
+handles.slider1.Value = ini_idx;
+%Reset Frame editbox string
+handles.Frame.String = num2str(ini_idx);
+
+set(handles.Text_playing, 'String', 'First frame')
+
+
+
+% --- Executes on button press in Hide_pts.
+function Hide_pts_Callback(hObject, eventdata, handles)
+% hObject    handle to Hide_pts (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+allROI = handles.listbox.UserData.allROI; %Get all ROI objects
+%Turn off all ROIs' visibility
+for i = 1:length(allROI)
+    curPt = allROI{i};
+    curPt.Visible = 'off';
+end
+
+
