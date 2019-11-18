@@ -22,7 +22,7 @@ function varargout = Manuvent(varargin)
 
 % Edit the above text to modify the response to help Manuvent
 
-% Last Modified by GUIDE v2.5 03-Nov-2019 21:50:17
+% Last Modified by GUIDE v2.5 18-Nov-2019 17:12:06
 
 % Version 0.0.2 11/01/2019 yixiang.wang@yale.edu
 
@@ -627,20 +627,20 @@ selpath = uigetdir('Please choose the folder where the ROI files are!');
 cd(selpath);
 fileList = dir('*allROI*');
 combineROI = {};
-combineInfo = [];
+combineROI_info = [];
 for i = 1:size(fileList,1)
     load(fileList(i).name);
     combineROI = [combineROI allROI];
-    combineInfo = [combineInfo; allROI_info];
+    combineROI_info = [combineROI_info; allROI_info];
 end
 
-if sz(3) >= max(combineInfo(:,4))
+if sz(3) >= max(combineROI_info(:,4))
     disp('Sanity check passed...Maximum frame of ROIs does not exceed maximum movie frame.')
 else
     msgbox('Detect mismatch between the movie and the ROI file!','Error');
 end
 
-handles.listbox.UserData.allROI_info = combineInfo;
+handles.listbox.UserData.allROI_info = combineROI_info;
 handles.listbox.UserData.allROI = combineROI;
 
 importedList = {};
@@ -732,3 +732,67 @@ for i = 1:length(allROI)
 end
 
 
+% --- Executes on button press in Label_movie.
+function Label_movie_Callback(hObject, eventdata, handles)
+% hObject    handle to Label_movie (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+set(handles.Text_playing, 'Visible', 'On')
+set(handles.Text_playing, 'String', 'Labeling...')
+disp('Running label movie function...')
+
+%Try to load the movie and ROI info
+try
+    curMovie = handles.output.UserData.curMovie; %Get current movie
+    allROI_info = handles.listbox.UserData.allROI_info; %Get all ROI info
+catch
+    msgbox('Please load a movie and its ROIs first!','Error');
+    return
+end
+
+sz = size(curMovie);
+
+try
+
+    %Construct each frame
+    parfor i = 1:sz(3)
+        %Get the list of ROIs appear on the current frame
+        showList = (allROI_info(:,3) <= i).*(allROI_info(:,4) >= i);
+        currCentroids = allROI_info(showList>0, 1:2);       
+        h = figure('visible','off');
+        imshow(mat2gray(curMovie(:,:,i)));
+        hold on
+        plot(currCentroids(:,1),currCentroids(:,2),'ro','MarkerSize',5,'LineWidth',2)
+        hold off
+        F(i) = getframe(h);
+        close(h)   
+        if mod(i,100) == 0
+            disp(num2str(i));
+        end
+    end
+
+    %Create output labeled movie name
+    filename = handles.Load_movie.UserData.filename;
+    OutputName = [filename(1:end-4) '_labeled.avi'];
+
+    % create the video writer with 25 fps
+    writerObj = VideoWriter(OutputName);
+    writerObj.FrameRate = 25;
+    % set the seconds per image
+    % open the video writer
+    open(writerObj);
+    % write the frames to the video
+    for i=1:length(F)
+        % convert the image to a frame
+        frame = F(i);    
+        writeVideo(writerObj, frame);
+    end
+    % close the writer object
+    close(writerObj);
+    
+catch
+    warning('Error happened! Probably the movie mismatches the ROIs!')
+end
+
+set(handles.Text_playing, 'Visible', 'Off')
