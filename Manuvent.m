@@ -773,8 +773,7 @@ try
     end
 
     %Create output labeled movie name
-    filename = handles.Load_movie.UserData.filename;
-    OutputName = [filename(1:end-4) '_labeled.avi'];
+    OutputName = 'Labeled_movie.avi';
 
     % create the video writer with 25 fps
     writerObj = VideoWriter(OutputName);
