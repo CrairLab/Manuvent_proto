@@ -623,6 +623,7 @@ Load_movie_Callback(hObject, eventdata, handles)
 
 sz = handles.output.UserData.sz;
 
+%Choose the folder where _allROI.mat files are saved
 selpath = uigetdir('Please choose the folder where the ROI files are!');
 cd(selpath);
 fileList = dir('*allROI*');
@@ -634,19 +635,27 @@ for i = 1:size(fileList,1)
     combineROI_info = [combineROI_info; allROI_info];
 end
 
+%Save combined data
+allROI = combineROI;
+allROI_info = combineROI_info;
+filename = fileList(1).name;
+filename = [filename(1: strfind(filename,'allROI')-1) '_combined.mat'];
+save(filename, 'allROI', 'allROI_info')
+
 if sz(3) >= max(combineROI_info(:,4))
     disp('Sanity check passed...Maximum frame of ROIs does not exceed maximum movie frame.')
 else
     msgbox('Detect mismatch between the movie and the ROI file!','Error');
 end
 
-handles.listbox.UserData.allROI_info = combineROI_info;
-handles.listbox.UserData.allROI = combineROI;
+%Update UserData
+handles.listbox.UserData.allROI_info = allROI_info;
+handles.listbox.UserData.allROI = allROI;
 
 importedList = {};
-for i = 1:size(combineROI,2)
-    rounded_str = num2str(round(str2num(combineROI{i}.UserData.Str)));
-    combineROI{i}.UserData.Str = rounded_str;
+for i = 1:size(allROI,2)
+    rounded_str = num2str(round(str2num(allROI{i}.UserData.Str)));
+    allROI{i}.UserData.Str = rounded_str;
     importedList{i,1} = rounded_str;
 end
 
