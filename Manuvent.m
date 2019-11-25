@@ -24,7 +24,7 @@ function varargout = Manuvent(varargin)
 
 % Last Modified by GUIDE v2.5 18-Nov-2019 17:12:06
 
-% Version 0.0.2 11/01/2019 yixiang.wang@yale.edu
+% Version 0.0.3 11/25/2019 yixiang.wang@yale.edu
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -111,7 +111,8 @@ set(handles.Text_playing, 'Visible', 'off')
 %Load the dF/F .mat movie
 [file,path]=uigetfile('*.mat','Please load the movie (mat) file!');
 load(fullfile(path,file));
-hObject.UserData.filename = file;
+%hObject.UserData.filename = file;
+handles.Load_movie.UserData.filename = file;
 
 %Clean index information from the previous movie
 handles.play.UserData = [];
