@@ -626,54 +626,59 @@ catch
     warning('Can not load the movie!')
 end
 
-sz = handles.output.UserData.sz;
+try
+    %Choose the folder where _allROI.mat files are saved
+    selpath = uigetdir('Please choose the folder where the ROI files are!');
+    cd(selpath);
+    fileList = dir('*allROI*');
+    combineROI = {};
+    combineROI_info = [];
+    for i = 1:size(fileList,1)
+        load(fileList(i).name);
+        combineROI = [combineROI allROI];
+        combineROI_info = [combineROI_info; allROI_info];
+    end
 
-%Choose the folder where _allROI.mat files are saved
-selpath = uigetdir('Please choose the folder where the ROI files are!');
-cd(selpath);
-fileList = dir('*allROI*');
-combineROI = {};
-combineROI_info = [];
-for i = 1:size(fileList,1)
-    load(fileList(i).name);
-    combineROI = [combineROI allROI];
-    combineROI_info = [combineROI_info; allROI_info];
+    %Save combined data
+    allROI = combineROI;
+    allROI_info = combineROI_info;
+    filename = fileList(1).name;
+    filename = [filename(1: strfind(filename,'allROI')-1) '_combined.mat'];
+
+    %Calculate median duration
+    all_durations = allROI_info(:,4) - allROI_info(:,3);
+    all_durations = all_durations(all_durations > 1);
+    median_duration = median(all_durations);
+
+    %Calculate # of bands per minutes
+    bands_per_minute = length(allROI)/max(allROI_info(:,4))*600;
+
+    save(filename, 'allROI', 'allROI_info', 'median_duration', 'bands_per_minute')
+
+    sz = handles.output.UserData.sz;
+
+    if sz(3) >= max(combineROI_info(:,4))
+        disp('Sanity check passed...Maximum frame of ROIs does not exceed maximum movie frame.')
+    else
+        msgbox('Detect mismatch between the movie and the ROI file!','Error');
+    end
+
+    %Update UserData
+    handles.listbox.UserData.allROI_info = allROI_info;
+    handles.listbox.UserData.allROI = allROI;
+
+    importedList = {};
+    for i = 1:size(allROI,2)
+        rounded_str = num2str(round(str2num(allROI{i}.UserData.Str)));
+        allROI{i}.UserData.Str = rounded_str;
+        importedList{i,1} = rounded_str;
+    end
+
+    handles.listbox.String = importedList;
+    
+catch
+    msgbox('Can not load data!','Error');
 end
-
-%Save combined data
-allROI = combineROI;
-allROI_info = combineROI_info;
-filename = fileList(1).name;
-filename = [filename(1: strfind(filename,'allROI')-1) '_combined.mat'];
-
-%Calculate median duration
-all_durations = allROI_info(:,4) - allROI_info(:,3);
-all_durations = all_durations(all_durations > 1);
-median_duration = median(all_durations);
-
-%Calculate # of bands per minutes
-bands_per_minute = length(allROI)/max(allROI_info(:,4))*600;
-
-save(filename, 'allROI', 'allROI_info', 'median_duration', 'bands_per_minute')
-
-if sz(3) >= max(combineROI_info(:,4))
-    disp('Sanity check passed...Maximum frame of ROIs does not exceed maximum movie frame.')
-else
-    msgbox('Detect mismatch between the movie and the ROI file!','Error');
-end
-
-%Update UserData
-handles.listbox.UserData.allROI_info = allROI_info;
-handles.listbox.UserData.allROI = allROI;
-
-importedList = {};
-for i = 1:size(allROI,2)
-    rounded_str = num2str(round(str2num(allROI{i}.UserData.Str)));
-    allROI{i}.UserData.Str = rounded_str;
-    importedList{i,1} = rounded_str;
-end
-
-handles.listbox.String = importedList;
 
 disp('')
 
