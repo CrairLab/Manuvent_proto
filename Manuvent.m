@@ -620,7 +620,11 @@ function Load_data_Callback(hObject, eventdata, handles)
 % hObject    handle to Load_data (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-Load_movie_Callback(hObject, eventdata, handles)
+try
+    Load_movie_Callback(hObject, eventdata, handles)
+catch
+    warning('Can not load the movie!')
+end
 
 sz = handles.output.UserData.sz;
 
@@ -641,7 +645,16 @@ allROI = combineROI;
 allROI_info = combineROI_info;
 filename = fileList(1).name;
 filename = [filename(1: strfind(filename,'allROI')-1) '_combined.mat'];
-save(filename, 'allROI', 'allROI_info')
+
+%Calculate median duration
+all_durations = allROI_info(:,4) - allROI_info(:,3);
+all_durations = all_durations(all_durations > 1);
+median_duration = median(all_durations);
+
+%Calculate # of bands per minutes
+bands_per_minute = length(allROI)/max(allROI_info(:,4))*600;
+
+save(filename, 'allROI', 'allROI_info', 'median_duration', 'bands_per_minute')
 
 if sz(3) >= max(combineROI_info(:,4))
     disp('Sanity check passed...Maximum frame of ROIs does not exceed maximum movie frame.')
@@ -761,12 +774,12 @@ catch
     return
 end
 
-sz = size(curMovie);
+output_sz = allROI_info(end,4);
 
 try
 
     %Construct each frame
-    parfor i = 1:sz(3)
+    parfor i = 1:output_sz
         %Get the list of ROIs appear on the current frame
         showList = (allROI_info(:,3) <= i).*(allROI_info(:,4) >= i);
         currCentroids = allROI_info(showList>0, 1:2);       
@@ -783,7 +796,7 @@ try
     end
 
     %Create output labeled movie name
-    OutputName = 'Labeled_movie.avi';
+    OutputName = ['Labeled_movie_' num2str(output_sz) '.avi'];
 
     % create the video writer with 25 fps
     writerObj = VideoWriter(OutputName);
