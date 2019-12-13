@@ -161,8 +161,11 @@ function Save_data_Callback(hObject, eventdata, handles)
 filename = handles.Load_movie.UserData.filename;
 allROI_info = handles.listbox.UserData.allROI_info;
 allROI = handles.listbox.UserData.allROI;
+start_frame = min(allROI_info(:,3));
+end_frame = max(allROI_info(:,4));
 %save all ROI(events) info as a .mat file
-uisave({'allROI_info', 'allROI'}, [filename(1:end-4) '_allROI.mat']);
+uisave({'allROI_info', 'allROI'}, [filename(1:end-4) ...
+    '_' num2str(start_frame) '_' num2str(end_frame) '_allROI.mat']);
 
 
 % --- Executes on selection change in listbox1.
@@ -371,7 +374,7 @@ try
         handles.Movie_control.UserData.curIdx = curIdx; %Update/store current frame index
         imshow(mat2gray(curMovie(:,:,curIdx)), 'Parent', handles.axes1);
         curIdx = curIdx + 1; %Movie to the next frame
-        pause(0.1);
+        pause(0.05);
         
     end
     
@@ -648,12 +651,14 @@ try
     %Calculate median duration
     all_durations = allROI_info(:,4) - allROI_info(:,3);
     all_durations = all_durations(all_durations > 1);
+    mean_duration = mean(all_durations);
     median_duration = median(all_durations);
 
     %Calculate # of bands per minutes
-    bands_per_minute = length(allROI)/max(allROI_info(:,4))*600;
+    bands_per_minute = ...
+        length(allROI)/(max(allROI_info(:,4)) - min(allROI_info(:,3)))*600;
 
-    save(filename, 'allROI', 'allROI_info', 'median_duration', 'bands_per_minute')
+    save(filename, 'allROI', 'allROI_info', 'median_duration', 'bands_per_minute', 'mean_duration')
 
     sz = handles.output.UserData.sz;
 
