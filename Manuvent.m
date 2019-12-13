@@ -779,12 +779,13 @@ catch
     return
 end
 
-output_sz = allROI_info(end,4);
+start_frame = min(allROI_info(:,3));
+end_frame = max(allROI_info(:,4));
 
 try
 
     %Construct each frame
-    parfor i = 1:output_sz
+    parfor i = start_frame:end_frame
         %Get the list of ROIs appear on the current frame
         showList = (allROI_info(:,3) <= i).*(allROI_info(:,4) >= i);
         currCentroids = allROI_info(showList>0, 1:2);       
@@ -799,9 +800,11 @@ try
             disp(num2str(i));
         end
     end
-
+    
+    F = F(start_frame:end_frame);
+    
     %Create output labeled movie name
-    OutputName = ['Labeled_movie_' num2str(output_sz) '.avi'];
+    OutputName = ['Labeled_movie_' num2str(start_frame) '_' num2str(end_frame) '.avi'];
 
     % create the video writer with 25 fps
     writerObj = VideoWriter(OutputName);
