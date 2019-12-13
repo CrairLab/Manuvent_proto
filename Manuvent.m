@@ -136,6 +136,9 @@ catch
     warning('Can not load the dF over F movie!')        
 end
 
+%Z-score curMovie
+curMovie = zscore(curMovie,0,3);
+
 %Save the movie and its size as an object to the UserData of the GUI
 sz = size(curMovie);
 curObj.sz = sz;
