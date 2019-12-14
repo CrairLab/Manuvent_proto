@@ -787,6 +787,17 @@ catch
     return
 end
 
+%Label all centers and save the image
+median_frame = nanmedian(curMovie,3);
+fh = figure('visible','on');
+fh.WindowState = 'maximized';
+imshow(mat2gray(median_frame))
+hold on
+plot(allROI_info(:,1),allROI_info(:,2),'r*')
+hold off
+saveas(fh,'Labeled_centers.png')
+
+%Get the first and last frames.
 start_frame = min(allROI_info(:,3));
 end_frame = max(allROI_info(:,4));
 
