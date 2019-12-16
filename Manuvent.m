@@ -648,8 +648,12 @@ try
     %Save combined data
     allROI = combineROI;
     allROI_info = combineROI_info;
+    %Get the first and last frames.
+    start_frame = min(allROI_info(:,3));
+    end_frame = max(allROI_info(:,4));
     filename = fileList(1).name;
-    filename = [filename(1: strfind(filename,'allROI')-1) '_combined.mat'];
+    filename = [filename(1: strfind(filename,'filter')-1)...
+        num2str(start_frame) '_' num2str(end_frame) '_combined.mat'];
 
     %Calculate median duration
     all_durations = allROI_info(:,4) - allROI_info(:,3);
