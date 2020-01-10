@@ -22,9 +22,9 @@ function varargout = Manuvent(varargin)
 
 % Edit the above text to modify the response to help Manuvent
 
-% Last Modified by GUIDE v2.5 18-Nov-2019 17:12:06
+% Last Modified by GUIDE v2.5 10-Jan-2020 13:16:40
 
-% Version 0.0.3 11/25/2019 yixiang.wang@yale.edu
+% Version 0.0.5 01/10/2020 yixiang.wang@yale.edu
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -849,3 +849,74 @@ catch
 end
 
 set(handles.Text_playing, 'Visible', 'Off')
+
+
+% --- Executes on button press in Crop_movie.
+function Crop_movie_Callback(hObject, eventdata, handles)
+% hObject    handle to Crop_movie (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+%Define roi
+handles.Text_load.String = 'Drawing';
+BW = roipoly;
+handles.Text_load.String = 'Defined';
+
+%Apply roi mask
+curMovie = handles.output.UserData.curMovie;
+curMovie(isnan(curMovie)) = 0;
+sz = size(curMovie);
+BW_3D = repmat(BW, [1,1,sz(3)]);
+A_dFoF_cropped = curMovie.*BW_3D;
+
+%Crop nan and 0 elements
+[dim1_lower,dim1_upper,dim2_lower,dim2_upper] = ...
+    getROIBoundsFromImage(A_dFoF_cropped(:,:,1)); 
+A_dFoF_cropped = ...
+    A_dFoF_cropped(dim1_lower:dim1_upper,dim2_lower:dim2_upper,:); 
+A_dFoF_cropped(A_dFoF_cropped == 0) = nan;
+
+%Save cropped matrix
+handles.Crop_movie.UserData.mask = BW;
+handles.Save_cropped.UserData.A_dFoF_cropped = A_dFoF_cropped;
+
+    function [nZ_1_lower,nZ_1_upper,nZ_2_lower,nZ_2_upper] = getROIBoundsFromImage(cur_img)
+    %    This function identify the coordinates of vertex of the minimum
+    %    rectangle containing the roi
+    %
+    %    Inputs:
+    %        cur_img          A 2D image containg roi
+    %
+    %    Outputs:
+    %        nZ_1_lower      lower left vertex of the minimum rectangle
+    %        nZ_1_upper      upper left vertex of the minimum rectangle
+    %        nZ_2_lower      lower right vertex of the minimum rectangle
+    %        nZ_2_upper      upper right vertex of the minimum rectangle
+
+        if (~any(isnan(cur_img(:)))) && (cur_img(1) == 0) && (cur_img(end) == 0)
+            cur_img = ~(cur_img == 0);
+        else
+            cur_img = ~isnan(cur_img);
+        end
+
+        nZ_2 = find(mean(cur_img,1));
+        nZ_2_upper = max(nZ_2);
+        nZ_2_lower = min(nZ_2);
+        nZ_1 = find(mean(cur_img,2));
+        nZ_1_upper = max(nZ_1);
+        nZ_1_lower = min(nZ_1);
+        
+
+% --- Executes on button press in Save_cropped.
+function Save_cropped_Callback(hObject, eventdata, handles)
+% hObject    handle to Save_cropped (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+%Get cropped matrix
+A_dFoF_cropped = handles.Save_cropped.UserData.A_dFoF_cropped;
+BW = handles.Crop_movie.UserData.mask;
+
+%Save cropped matrix
+filename = handles.Load_movie.UserData.filename;
+uisave({'BW','A_dFoF_cropped'}, [filename(1:end-4) '_cropped.mat']);
